@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.devblocks.com/schema/plugin.xsd">
+	<id>wgm.apiai</id>
+	<name>Api.ai Integration</name>
+	<description>This plugin provides integration with Api.ai for intent detection, text-to-speech, etc.</description>
+	<author>Webgroup Media, LLC.</author>
+	<version>0.0.1</version>
+	<link>http://www.cerbweb.com/book/latest/plugins/wgm.apiai</link>
+	<image>plugin.png</image>
+ 
+ 	<!-- Requirements -->
+
+	<requires>
+		<app_version min="7.3" max="7.3.99" />
+		<php_extension name="curl" />
+	</requires>
+ 
+	<!-- Plugin Dependencies -->
+	
+	<dependencies>
+		<require plugin_id="cerberusweb.core" version="7.3.0" />
+	</dependencies>
+
+	<!-- Exported Classes -->
+	
+	<class_loader>
+		<!--
+		<file path="api/App.php">
+			<class name="WgmJira_API" />
+		</file>
+		-->
+	</class_loader>
+
+	<!-- Extensions -->
+ 
+	<extensions>
+
+		<!-- Service Providers -->
+		
+		<extension point="cerb.service.provider">
+			<id>wgm.apiai.service.provider</id>
+			<name>Api.ai</name>
+			<class>
+				<file>api/App.php</file>
+				<name>ServiceProvider_ApiAi</name>
+			</class>
+			<params>
+				<param key="contexts">
+					<value>
+						<data key="cerberusweb.contexts.app" />
+						<data key="cerberusweb.contexts.worker" />
+					</value>
+				</param>
+			</params>
+		</extension>
+
+	</extensions>
+</plugin>
