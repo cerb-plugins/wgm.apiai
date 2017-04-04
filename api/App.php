@@ -1,41 +1,33 @@
 <?php
-class ServiceProvider_ApiAi extends Extension_ServiceProvider implements IServiceProvider_HttpRequestSigner, IServiceProvider_Popup {
+class ServiceProvider_ApiAi extends Extension_ServiceProvider implements IServiceProvider_HttpRequestSigner {
 	const ID = 'wgm.apiai.service.provider';
 	
-	function renderPopup() {
-		$this->_renderPopupAuthForm();
-	}
-	
-	function renderAuthForm() {
-		@$view_id = DevblocksPlatform::importGPC($_REQUEST['view_id'], 'string', '');
-		
+	function renderConfigForm(Model_ConnectedAccount $account) {
 		$tpl = DevblocksPlatform::getTemplateService();
+		$active_worker = CerberusApplication::getActiveWorker();
 		
-		$tpl->assign('view_id', $view_id);
+		$params = $account->decryptParams($active_worker);
+		$tpl->assign('params', $params);
 		
-		$tpl->display('devblocks:wgm.apiai::provider/setup.tpl');
+		$tpl->display('devblocks:wgm.apiai::provider/edit_params.tpl');
 	}
 	
-	function saveAuthFormAndReturnJson() {
-		@$params = DevblocksPlatform::importGPC($_POST['params'], 'array', array());
+	function saveConfigForm(Model_ConnectedAccount $account, array &$params) {
+		@$edit_params = DevblocksPlatform::importGPC($_POST['params'], 'array', array());
 		
 		$active_worker = CerberusApplication::getActiveWorker();
 		
-		if(!isset($params['agent_name']) || empty($params['agent_name']))
-			return json_encode(array('status' => false, 'error' => "The 'Agent Name' is required."));
-		
-		if(!isset($params['access_token']) || empty($params['access_token']))
-			return json_encode(array('status' => false, 'error' => "The 'Access Token' is required."));
+		if(!isset($edit_params['access_token']) || empty($edit_params['access_token']))
+			return "The 'Access Token' is required.";
 		
 		// Test the credentials
 		
-		$url = sprintf('https://api.api.ai/v1/query?v=20150910&lang=en&query=weather');
-		
+		$url = sprintf('https://api.api.ai/v1/query?v=20150910&lang=en&query=weather&sessionId=0000000000');
 		
 		$ch = DevblocksPlatform::curlInit($url);
 		
 		$headers = array(
-			'Authorization: Bearer ' . $params['access_token'],
+			'Authorization: Bearer ' . $edit_params['access_token'],
 		);
 		
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
@@ -44,22 +36,17 @@ class ServiceProvider_ApiAi extends Extension_ServiceProvider implements IServic
 		
 		$json = json_decode($out, true);
 		
+		error_log($out);
+		
 		$status_code = $json['status']['code'];
 		
-		
 		if(200 != $status_code)
-			return json_encode(array('status' => false, 'error' => "Failed to verify the given API access token."));
+			return "Failed to verify the given API access token.";
 		
-		$id = DAO_ConnectedAccount::create(array(
-			DAO_ConnectedAccount::NAME => sprintf('Api.ai: %s', $params['agent_name']),
-			DAO_ConnectedAccount::EXTENSION_ID => ServiceProvider_ApiAi::ID,
-			DAO_ConnectedAccount::OWNER_CONTEXT => CerberusContexts::CONTEXT_WORKER,
-			DAO_ConnectedAccount::OWNER_CONTEXT_ID => $active_worker->id,
-		));
+		foreach($edit_params as $k => $v)
+			$params[$k] = $v;
 		
-		DAO_ConnectedAccount::setAndEncryptParams($id, $params);
-		
-		return json_encode(array('status' => true, 'id' => $id));
+		return true;
 	}
 	
 	function authenticateHttpRequest(Model_ConnectedAccount $account, &$ch, &$verb, &$url, &$body, &$headers) {
