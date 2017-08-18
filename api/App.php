@@ -3,7 +3,7 @@ class ServiceProvider_ApiAi extends Extension_ServiceProvider implements IServic
 	const ID = 'wgm.apiai.service.provider';
 	
 	function renderConfigForm(Model_ConnectedAccount $account) {
-		$tpl = DevblocksPlatform::getTemplateService();
+		$tpl = DevblocksPlatform::services()->template();
 		$active_worker = CerberusApplication::getActiveWorker();
 		
 		$params = $account->decryptParams($active_worker);
@@ -35,8 +35,6 @@ class ServiceProvider_ApiAi extends Extension_ServiceProvider implements IServic
 		$out = DevblocksPlatform::curlExec($ch);
 		
 		$json = json_decode($out, true);
-		
-		error_log($out);
 		
 		$status_code = $json['status']['code'];
 		
